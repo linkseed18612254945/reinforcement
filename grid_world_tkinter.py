@@ -91,6 +91,6 @@ class Grid(tk.Tk, object):
 
     def render(self):
         self.update()
-        time.sleep(0.1)
+        time.sleep(0.01)
 
 
