@@ -2,6 +2,7 @@ import tkinter as tk
 import numpy as np
 import pandas as pd
 import time
+from brain import *
 
 F_HEIGHT = 3
 F_WIDTH = 3
@@ -15,7 +16,6 @@ class FlagWorld(tk.Tk):
         self.title = 'Flag'
         self.actions = [(i, j) for i in range(F_HEIGHT) for j in range(F_WIDTH)]
         self.n_actions = len(self.actions)
-        self.state = np.zeros((F_HEIGHT, F_WIDTH))
         self.geometry('{0}x{1}'.format(F_HEIGHT * UNIT, F_WIDTH * UNIT))
         self._init_build()
 
@@ -30,34 +30,34 @@ class FlagWorld(tk.Tk):
             self.canvas.create_line(x0, y0, x1, y1)
         self.canvas.pack()
 
-    def _check_winner_end(self):
+    def _check_winner_end(self, state):
         winner = 0
         end = False
         result = []
         for i in range(F_HEIGHT):
-            result.append(self.state[i, :].sum())
+            result.append(state[i, :].sum())
             pos = np.array([i, 0])
             result.append(0)
             while pos[0] < F_HEIGHT:
-                result[-1] += self.state[pos[0], pos[1]]
+                result[-1] += state[pos[0], pos[1]]
                 pos += (1, 1)
             pos = np.array([i, 0])
             result.append(0)
             while pos[0] >= 0:
-                result[-1] += self.state[pos[0], pos[1]]
+                result[-1] += state[pos[0], pos[1]]
                 pos += (-1, 1)
 
         for i in range(F_WIDTH):
-            result.append(self.state[:, i].sum())
+            result.append(state[:, i].sum())
             pos = np.array([0, i])
             result.append(0)
             while pos[1] < F_HEIGHT:
-                result[-1] += self.state[pos[0], pos[1]]
+                result[-1] += state[pos[0], pos[1]]
                 pos += (1, 1)
             pos = np.array([i, 0])
             result.append(0)
             while pos[1] >= 0:
-                result[-1] += self.state[pos[0], pos[1]]
+                result[-1] += state[pos[0], pos[1]]
                 pos += (1, -1)
 
         for i in result:
@@ -70,24 +70,24 @@ class FlagWorld(tk.Tk):
                 end = True
                 return winner, end
 
-        if np.sum(np.abs(self.state)) == F_HEIGHT * F_WIDTH:
+        if np.sum(np.abs(state)) == F_HEIGHT * F_WIDTH:
             winner = 0
             end = True
             return winner, end
         return winner, end
 
     def reset(self):
-        self.state = np.zeros((F_HEIGHT, F_WIDTH))
+        state = np.zeros((F_HEIGHT, F_WIDTH))
         self.canvas.destroy()
         self._init_build()
-        return self.state
+        return state
 
-    def step(self, action, role):
+    def step(self, action, state, role):
         if action not in self.actions:
             return
         if role != 1 and role != -1:
             return
-        if self.state[action] != 0:
+        if state[action] != 0:
             return
 
         role_color = 'red' if role == 1 else 'blue'
@@ -96,25 +96,39 @@ class FlagWorld(tk.Tk):
             center[0] - 15, center[1] - 15,
             center[0] + 15, center[1] + 15,
             fill=role_color)
-        self.state[action] = role
-        winner, end = self._check_winner_end()
+        state_ = state.copy()
+        state_[action] = role
+        winner, end = self._check_winner_end(state)
         if winner == role:
             reward = 1
         else:
             reward = 0
-        return self.state, reward, end
+        return state_, reward, end
 
     def render(self, sleep_time=1):
         self.update()
         time.sleep(sleep_time)
 
 
+class Player:
+    def __init__(self, role):
+        self.role = role
+
+
 if __name__ == '__main__':
     env = FlagWorld()
-    env.render()
-    env.step((0, 0), -1)
-    env.render()
-    env.step((0, 1), 1)
-    env.render()
-    env.reset()
-    env.render(4)
+    player1 = QLearningTable(env.actions)
+    player2 = QLearningTable(env.actions)
+    current_player = player1
+    role = 1
+    observation = env.reset()
+    while True:
+        #env.render()
+        action = current_player.choose_action(str(observation))
+        observation_, reward, done = env.step(action, observation, role)
+        player1.learn(str(observation), action, str(observation_), reward, done)
+        observation = observation_
+        role = -role
+        current_player = player1 if current_player is player2 else player2
+        if done:
+            break
