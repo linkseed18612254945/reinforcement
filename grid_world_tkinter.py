@@ -3,8 +3,8 @@ import numpy as np
 import sys
 import time
 
-HEIGHT = 4
-WIDTH = 4
+HEIGHT = 8
+WIDTH = 8
 UNIT = 40
 
 
@@ -32,17 +32,17 @@ class Grid(tk.Tk, object):
             origin[0] - 15, origin[1] - 15,
             origin[0] + 15, origin[1] + 15,
             fill='red')
-        hell1_center = origin + np.array([UNIT * 2, UNIT])
+        hell1_center = origin + np.array([UNIT * 4, UNIT * 2])
         self.hell1 = self.canvas.create_rectangle(
             hell1_center[0] - 15, hell1_center[1] - 15,
             hell1_center[0] + 15, hell1_center[1] + 15,
             fill='black')
-        hell2_center = origin + np.array([UNIT, UNIT * 2])
+        hell2_center = origin + np.array([UNIT * 2, UNIT * 4])
         self.hell2 = self.canvas.create_rectangle(
             hell2_center[0] - 15, hell2_center[1] - 15,
             hell2_center[0] + 15, hell2_center[1] + 15,
             fill='black')
-        oval_center = origin + UNIT * 2
+        oval_center = origin + UNIT * 4
         self.target = self.canvas.create_rectangle(
             oval_center[0] - 15, oval_center[1] - 15,
             oval_center[0] + 15, oval_center[1] + 15,
@@ -50,9 +50,7 @@ class Grid(tk.Tk, object):
 
         self.canvas.pack()
 
-    def reset(self):
-        self.update()
-        time.sleep(1)
+    def reset(self, sleep_time=0):
         self.canvas.delete(self.oval)
         origin = np.array([UNIT / 2, UNIT / 2])
         self.oval = self.canvas.create_oval(
@@ -89,8 +87,8 @@ class Grid(tk.Tk, object):
             done = False
         return s_, reward, done
 
-    def render(self):
+    def render(self, sleep_time=0.2):
         self.update()
-        time.sleep(0.01)
+        time.sleep(sleep_time)
 
 

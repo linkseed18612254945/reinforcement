@@ -4,8 +4,8 @@ import pandas as pd
 import time
 from brain import *
 
-F_HEIGHT = 3
-F_WIDTH = 3
+F_HEIGHT = 5
+F_WIDTH = 5
 UNIT = 40
 WINNER_COUNT = 3
 
@@ -98,37 +98,14 @@ class FlagWorld(tk.Tk):
             fill=role_color)
         state_ = state.copy()
         state_[action] = role
-        winner, end = self._check_winner_end(state)
+        winner, end = self._check_winner_end(state_)
         if winner == role:
             reward = 1
         else:
             reward = 0
         return state_, reward, end
 
-    def render(self, sleep_time=1):
+    def render(self, sleep_time=0.4):
         self.update()
         time.sleep(sleep_time)
 
-
-class Player:
-    def __init__(self, role):
-        self.role = role
-
-
-if __name__ == '__main__':
-    env = FlagWorld()
-    player1 = QLearningTable(env.actions)
-    player2 = QLearningTable(env.actions)
-    current_player = player1
-    role = 1
-    observation = env.reset()
-    while True:
-        #env.render()
-        action = current_player.choose_action(str(observation))
-        observation_, reward, done = env.step(action, observation, role)
-        player1.learn(str(observation), action, str(observation_), reward, done)
-        observation = observation_
-        role = -role
-        current_player = player1 if current_player is player2 else player2
-        if done:
-            break
