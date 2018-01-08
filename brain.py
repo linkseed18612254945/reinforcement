@@ -54,9 +54,10 @@ class TableRL(object):
 
 
 class PlayerRL(TableRL):
-    def __init__(self, actions, name='player', role=1, learning_rate=0.01, reward_decay=0.9, e_greedy=0.9):
+    def __init__(self, actions, name='player', role=1, learning_rate=0.1, reward_decay=0.5, e_greedy=0.9):
         super(PlayerRL, self).__init__(actions, name, learning_rate, reward_decay, e_greedy)
         self.role = role
+        self.trace = []
 
     def choose_action(self, observation):
         state = self.check_state(observation)
@@ -66,7 +67,7 @@ class PlayerRL(TableRL):
             action = state_action.argmax()
         else:
             legal_actions = self.rl_table.ix[state, :]
-            legal_actions = legal_actions[legal_actions >= 0].index
+            legal_actions = legal_actions[legal_actions >= -999].index
             action = random.choice(legal_actions)
         return action
 
@@ -80,20 +81,24 @@ class PlayerRL(TableRL):
                     name=state,
                 )
             )
-        for action in self.actions:
-            if observation[action[0], action[1]] != 0:
-                self.rl_table.ix[state, action] = -1
+            for action in self.actions:
+                if observation[action[0], action[1]] != 0:
+                    self.rl_table.ix[state, action] = -1000
         return state
 
-    def learn(self, s, a, s_, r, done):
-        s = self._hash_state(s)
-        s_ = self.check_state(s_)
-        q_predict = self.rl_table.ix[s, a]
-        if done:
-            q_target = r
-        else:
-            q_target = r + self.gamma * self.rl_table.ix[s_, :].max()
-        self.rl_table.ix[s, a] += self.alpha * (q_target - q_predict)
+    def feed_state(self, state, action):
+        state = self.check_state(state)
+        self.trace.append((state, action))
+
+    def learn(self, r):
+        target = r
+        for s, a in reversed(self.trace):
+            predict = self.rl_table.ix[s, a]
+            self.rl_table.ix[s, a] += self.alpha * (target - predict)
+            target = self.rl_table.ix[s, a] * self.gamma
+
+    def clean_trace(self):
+        self.trace = []
 
 
 class QLearningTable(TableRL):

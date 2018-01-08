@@ -17,7 +17,6 @@ def sarsa_train(env, rl_model, episode_num=100):
             observation_, reward, done = env.step(action)
             action_ = rl_model.choose_action(observation_)
             rl_model.learn(observation, action, observation_, action_, reward, done)
-
             observation = observation_
             action = action_
             if done:
@@ -32,13 +31,9 @@ def qlearn_train(env, rl_model, episode_num=100):
         print('Train {0}/{1}'.format(episode, episode_num))
         observation = env.reset()
         while True:
-            # 根据策略选择行为
             action = rl_model.choose_action(observation)
-            # 采取行为进行交互,得到下一个状态,结束情况以及回报值
             observation_, reward, done = env.step(action)
-            # RL根据状态行为以及预测结果来学习,更新价值函数等
             rl_model.learn(observation, action, observation_, reward, done)
-
             observation = observation_
             if done:
                 break
@@ -62,19 +57,35 @@ def model_test(env, rl_model, try_num):
 
 
 def player_train(env, player1, player2, episode_num=100):
+    player1_win = 0
+    player2_win = 0
+    tie = 0
     for episode in range(episode_num):
         print('Train {0}/{1}'.format(episode, episode_num))
+        player1.clean_trace()
+        player2.clean_trace()
         current_player = player1
+        opponent_player = player2
         observation = env.reset()
         while True:
             action = current_player.choose_action(observation)
             observation_, reward, done = env.step(action, observation, current_player.role)
-            current_player.learn(observation, action, observation_, reward, done)
-            observation = observation_
-            current_player = player1 if current_player is player2 else player2
+            current_player.feed_state(observation, action)
             if done:
+                if reward == 1:
+                    if current_player is player1:
+                        player1_win += 1
+                    else:
+                        player2_win += 1
+                    current_player.learn(reward)
+                    opponent_player.learn(-reward)
+                else:
+                    tie += 1
                 break
-    print('Train Over')
+            observation = observation_
+            current_player, opponent_player = opponent_player, current_player
+    print('Train Over, player1 win{0}, player2 win{1}, tie{2}'.
+          format(player1_win / episode_num, player2_win / episode_num, tie / episode_num))
     player1.save_table()
     player2.save_table()
     return player1, player2
@@ -83,19 +94,34 @@ def player_train(env, player1, player2, episode_num=100):
 def player_compete(env, player1, player2, compete_num):
     player1.set_greedy()
     player2.set_greedy()
+    player1_win = 0
+    player2_win = 0
+    tie = 0
     for episode in range(compete_num):
         print('Compete round ' + str(episode))
+        player1.clean_trace()
+        player2.clean_trace()
         current_player = player1
+        opponent_player = player2
         observation = env.reset()
         env.render()
         while True:
             action = current_player.choose_action(observation)
             observation_, reward, done = env.step(action, observation, current_player.role)
-            observation = observation_
-            current_player = player1 if current_player is player2 else player2
             env.render()
             if done:
+                if reward == 1:
+                    if current_player is player1:
+                        player1_win += 1
+                    else:
+                        player2_win += 1
+                else:
+                    tie += 1
                 break
+            observation = observation_
+            current_player, opponent_player = opponent_player, current_player
+    print('Train Over, player1 win{0}, player2 win{1}, tie{2}'.
+          format(player1_win / compete_num, player2_win / compete_num, tie / compete_num))
 
 
 def grid_main():
@@ -113,9 +139,9 @@ def play_main():
     env = FlagWorld()
     player1 = PlayerRL(env.actions, 'player1', role=1)
     player2 = PlayerRL(env.actions, 'player2', role=-1)
-    player1, player2 = player_train(env, player1, player2, 10000)
-    # player1.load_table()
-    # player2.load_table()
+    # player1, player2 = player_train(env, player1, player2, 20000)
+    player1.load_table()
+    player2.load_table()
     player_compete(env, player1, player2, 20)
 
 

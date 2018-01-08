@@ -244,7 +244,7 @@ class Judger:
                 self.currentState.show()
                 time.sleep(1)
             [i, j, symbol] = self.currentPlayer.take_action()
-            self.currentState = self.currentState.next_state(i, j , symbol)
+            self.currentState = self.currentState.next_state(i, j, symbol)
             self.currentState, is_end = ALL_STATES[hash(self.currentState)]
             self.feed_currentState()
             if is_end:

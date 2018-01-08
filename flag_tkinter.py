@@ -4,8 +4,8 @@ import pandas as pd
 import time
 from brain import *
 
-F_HEIGHT = 5
-F_WIDTH = 5
+F_HEIGHT = 3
+F_WIDTH = 3
 UNIT = 40
 WINNER_COUNT = 3
 
@@ -105,7 +105,7 @@ class FlagWorld(tk.Tk):
             reward = 0
         return state_, reward, end
 
-    def render(self, sleep_time=0.4):
+    def render(self, sleep_time=1):
         self.update()
         time.sleep(sleep_time)
 
