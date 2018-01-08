@@ -2,7 +2,7 @@ import tkinter as tk
 import numpy as np
 import pandas as pd
 import time
-from brain import *
+from table_brain import *
 
 F_HEIGHT = 3
 F_WIDTH = 3

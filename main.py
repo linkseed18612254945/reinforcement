@@ -1,7 +1,7 @@
 from grid_world_tkinter import Grid
 from flag_tkinter import FlagWorld
 import random
-from brain import *
+from table_brain import *
 
 
 TRY_NUM = 20
@@ -123,6 +123,22 @@ def player_compete(env, player1, player2, compete_num):
     print('Train Over, player1 win{0}, player2 win{1}, tie{2}'.
           format(player1_win / compete_num, player2_win / compete_num, tie / compete_num))
 
+
+def dql_gird_train(env, rl_model, episode_num):
+    step = 0
+    for episode in range(episode_num):
+        observation = env.reset()
+
+        while True:
+            action = rl_model.choose_action(observation)
+            observation_, reward, done = env.step(action, observation)
+            rl_model.store_transition(observation, action, reward, observation_)
+            if step > 200 and step % 5 == 0:
+                rl_model.learn()
+            if done:
+                break
+            observation = observation_
+            step += 1
 
 def grid_main():
     env = Grid()
